@@ -1,35 +1,47 @@
-import {StyleSheet, Text, View, Image, Alert, Button } from 'react-native';
+import {StyleSheet, Text, View, Image, Alert, Button, SafeAreaView} from 'react-native';
 import { Camera, CameraView} from 'expo-camera';
+import { Video } from 'expo-av';
 import { useState, useRef, useEffect } from 'react';
 import * as MediaLibrary from 'expo-media-library';
-import { TouchableOpacity } from 'react-native';
-import { Entypo, MaterialIcons, Feather } from '@expo/vector-icons';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
+import { shareAsync } from 'expo-sharing';
+import MediaActions from '../components/MediaActions';
+import CameraControls from '../components/CameraControls';
 
 const CameraScreen = () => {
-    const [isRecording, setIsRecording] = useState(false);
     const [hasCameraPermission, setHasCameraPermission] = useState(null);
     const [hasMediaLibraryPermission, setHasMediaLibraryPermission] = useState(null);
-    const [type, setType] = useState('back');
-    const [flash, setFlash] = useState('off');
+    const [hasAudioPermission, setHasAudioPermission] = useState(null);
     const [image, setImage] = useState(null);
-    // const [facing, setFacing] = useState('back');
+    const [video, setVideo] = useState(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [facing, setFacing] = useState('back');
     const cameraRef = useRef(null);
+
     function toggleCameraFacing() {
-        setType(current => (current === 'back' ? 'front' : 'back'));
+        setFacing(current => (current === 'back' ? 'front' : 'back'));
     }
     useEffect(() => {
         (async () => {
             const mediaPermissionStatus = await MediaLibrary.requestPermissionsAsync();
-            console.log(mediaPermissionStatus.status)
-            setHasCameraPermission(mediaPermissionStatus.status);
             const cameraPermissionStatus = await Camera.requestCameraPermissionsAsync();
-            console.log(cameraPermissionStatus.status)
-            setHasMediaLibraryPermission(cameraPermissionStatus.status);
-        })();
-    }, [])
+            const audioPermissionStatus = await Camera.requestMicrophonePermissionsAsync();
     
+            setHasMediaLibraryPermission(mediaPermissionStatus.status === 'granted');
+            setHasCameraPermission(cameraPermissionStatus.status === 'granted');
+            setHasAudioPermission(audioPermissionStatus.status === 'granted');
+        })();
+    }, []);
+    
+    if (hasCameraPermission === null || hasAudioPermission === null || hasMediaLibraryPermission === null) {
+        return <Text>Requesting permissions...</Text>;
+    }
+    
+    if (!hasCameraPermission || !hasAudioPermission || !hasMediaLibraryPermission) {
+        return Alert.alert(
+            'Permissions Denied',
+            'Please grant all required permissions in settings to use the camera functionality.'
+        );
+    }
     const takePicture = async() => {
         if(cameraRef){
             try {
@@ -41,69 +53,99 @@ const CameraScreen = () => {
             }
         }
     }
-    const savePicture = async () =>{
-        if(image){
+    const recordVideo = async () => {
+        console.log("Attempting to start video recording...");
+        if(cameraRef){
             try {
-                await MediaLibrary.createAssetAsync(image);
-                Alert.alert('Picture saved!');
-                setImage(null);
+                console.log('try recording')
+                setIsRecording(true)
+                console.log("Calling recordAsync...");
+                const videoData = await cameraRef.current.recordAsync();
+                console.log('here is the video data: ', videoData);
+                setVideo(videoData.uri);
             } catch (error) {
-                console.error('error in save image:', error)
+                console.error('Error in record video: ', error)
+            }finally {
+                setIsRecording(false); 
             }
+        }else{
+            console.log('cameraRef is not available')
         }
     }
-    return (
-        <View style={styles.container}>
-            {!image ? 
-            <CameraView
-                style={styles.camera}
-                facing={type}
-                flash={flash}
-                ref={cameraRef}
-                
-            >
-                <View style={styles.buttonWrapper}>
-                    <TouchableOpacity style={styles.button}>
-                        <Entypo name='camera' size={25} color={'#f1f1f1'} onPress={takePicture}/>
-                        <Text style={styles.text}>Take photo</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.button}>
-                        <MaterialIcons name="flip-camera-ios" size={25} color="#f1f1f1" onPress={toggleCameraFacing}/>
-                        <Text style={styles.text}>Flip</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.button}>
-                        <Feather name="video" size={24} color="#f1f1f1" />
-                        <Text style={styles.text}>Record video</Text>
-                    </TouchableOpacity>
-                </View>
-            </CameraView>
-            : 
-            <Image source={{uri: image}} style={styles.camera} />
+    const stopRecording = () =>{
+        console.log("Stopping video recording...");
+        if (cameraRef) {
+            console.log('try stop recording')
+            setIsRecording(false);
+            cameraRef.current.stopRecording();
+            console.log('stopped recording')
         }
-            <View>
-                {image ? 
-                    <View style={styles.actionButtonWrapper}>
-                        <TouchableOpacity style={styles.button}>
-                            <MaterialCommunityIcons name="camera-retake" size={25} color="#f1f1f1" onPress={() => setImage(null)} />
-                            <Text style={styles.text}>Re-take</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.button}>
-                            <MaterialIcons name="save-alt" size={25} color="#f1f1f1" onPress={savePicture}/>
-                            <Text style={styles.text}>Save</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.button}>
-                            <FontAwesome6 name="share-from-square" size={20} color="#f1f1f1" onPress={()=> console.log('Shared pressed.')} />
-                            <Text style={styles.text}>Share</Text>
-                        </TouchableOpacity>
-                    </View>
-                :
-                    <TouchableOpacity style={styles.button}>
-                        <Entypo name='camera' size={25} color={'#f1f1f1'} onPress={takePicture}/>
-                        <Text style={styles.text}>Take photo</Text>
-                    </TouchableOpacity>
-                }
+    };
+    const saveToLibrary = async (uri) => {
+        if(uri){
+            try {
+                await MediaLibrary.createAssetAsync(uri);
+                Alert.alert('Saved!');
+            } catch (error) {
+                console.error('error in save:', error)
+            }
+        }
+    };
+    const share = async (uri) => {
+        if(uri) await shareAsync(uri);
+    };
+    const renderImageView = ()=>{
+        return (
+            <SafeAreaView style={styles.container}>
+                <Image source={{uri: image}} style={styles.camera} />
+                <MediaActions 
+                    onRetake={()=>setImage(null)}
+                    onSave={()=>saveToLibrary(image)}
+                    onShare={()=>share(image)}
+                />
+            </SafeAreaView>
+        )
+    };
+    const renderVideoView = () => {
+        return ( 
+            <SafeAreaView style={styles.container}>
+                <Video source={{uri: video}} style={styles.camera} useNativeControls resizeMode="contain" isLooping />
+                <MediaActions 
+                    onRetake={()=>setVideo(null)}
+                    onSave={()=>saveToLibrary(video)}
+                    onShare={()=>share(video)}
+                />
+            </SafeAreaView>
+        )
+    };
+    const renderRecordingIndicator = () => {
+        return (
+            <View style={styles.recordingIndicator}>
+                <Text style={styles.recordingText}>Recording ...</Text>
             </View>
-        </View>
+        )
+    }
+    return (
+        <SafeAreaView style={styles.container}>
+            {image ? renderImageView()  :  video ? renderVideoView() : 
+            <>
+                <CameraView
+                style={styles.camera}
+                facing={facing}
+                ref={cameraRef}
+                >
+                    {isRecording && renderRecordingIndicator()}
+                    <CameraControls 
+                        isRecording={isRecording}
+                        onTakePicture={takePicture}
+                        onRecordVideo={recordVideo}
+                        onStopRecording={stopRecording}
+                        onToggleCamera={toggleCameraFacing}
+                    />
+                </CameraView>
+            </>
+        }
+        </SafeAreaView>
     );
 }
 const styles = StyleSheet.create({
@@ -116,38 +158,28 @@ const styles = StyleSheet.create({
     camera: {
         flex: 1,
     },
-    button: {
-        height: 25,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    text: {
-        fontWeight: 'bold',
-        fontSize: 16,
-        color: '#f1f1f1',
-        marginLeft: 10
-    },
     buttonWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-around',
         marginVertical: 10,
         width: '100%',
-        paddingHorizontal: 20,
+        paddingHorizontal: 10,
         alignSelf: 'flex-end',
         
     },
-    actionButtonWrapper: {
+    recordingIndicator: {
         position: 'absolute',
-        flexDirection: 'row', 
-        justifyContent: 'space-around', 
-        paddingVertical: 20, 
-        paddingHorizontal: 20,
-        backgroundColor: 'rgba(0, 0, 0, 0.6)',
-        bottom: 90, 
-        width: '100%',
-}
+        top: 50,
+        right: 20,
+        backgroundColor: 'red',
+        padding: 10,
+        borderRadius: 5,
+    },
+    recordingText: {
+        color: 'white', 
+        fontWeight: 'bold' 
+    },
 });
 
 export default CameraScreen

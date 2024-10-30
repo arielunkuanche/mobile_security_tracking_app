@@ -1,8 +1,13 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import TabBar from '../components/TabBar'
+import { useFonts } from 'expo-font';
 
 const _layout = () => {
+    // const [loaded, error] = useFonts({
+    //     'Outfit': require('./assets/fonts/Outfit-Regular.ttf'),
+    // });
+    
     return (
         <Tabs 
             tabBar={ (props) => <TabBar {...props} /> } 
