@@ -2,12 +2,13 @@ import  { View, StyleSheet } from 'react-native'
 import React from 'react'
 import SearchScreen from '../components/SearchScreen'
 import LoginScreen from '../components/LoginScreen'
+import EditProfile from '../components/EditProfile'
 
 
 const Search = () =>{
     return(
         <View style={styles.container}>
-            <LoginScreen></LoginScreen>
+            <EditProfile />
         </View>
     )
 }
