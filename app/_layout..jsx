@@ -51,9 +51,9 @@ const _layout = () => {
                         }}
                     />
                     <Tabs.Screen 
-                        name='search'
+                        name='contacts'
                         options={{
-                            title: 'Search',
+                            title: 'Contacts',
                         }}
                     />
                     <Tabs.Screen 

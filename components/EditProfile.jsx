@@ -19,7 +19,6 @@ const EditProfile = ({ onClose, onChangeUsername, currentUsername}) => {
             setEmail(currentUser.email || '');
         }  
         // setUsername(currentUser.email.slice(0, 5));     
-       
     }, [currentUsername]);
     const handleSave = async () => {
 

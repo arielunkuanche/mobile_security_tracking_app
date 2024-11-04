@@ -8,7 +8,7 @@ const TabBar = ({ state, descriptors, navigation }) => {
 
     const icons = {
         index:(props) => <AntDesign name="home" size={26} color={greyColor} {...props} />,
-        search:(props) => <Feather name="compass" size={26} color={greyColor} {...props} />,
+        contacts:(props) => <Feather name="compass" size={26} color={greyColor} {...props} />,
         media:(props) => <Ionicons name="add-circle-outline" size={26} color={greyColor} {...props} />,
         profile:(props) => <AntDesign name="user" size={26} color={greyColor} {...props} />
     }

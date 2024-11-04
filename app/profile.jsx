@@ -85,7 +85,7 @@ const Profile = () =>{
                             <Text style={styles.editButtonText} >Edit Profile</Text>  
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.editActionButton}>
-                            <Text style={styles.editButtonText} >Add Contact</Text>  
+                            <Text style={styles.editButtonText} >Notification</Text>  
                         </TouchableOpacity>
                     </View>
                     <Button style={styles.modalButton} icon='contacts' mode='contained' onPress={showContactsModal}>

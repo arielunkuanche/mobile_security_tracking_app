@@ -1,14 +1,12 @@
 import  { View, StyleSheet } from 'react-native'
 import React from 'react'
-import SearchScreen from '../components/SearchScreen'
-import LoginScreen from '../components/LoginScreen'
-import EditProfile from '../components/EditProfile'
+import ContactsComponent from '../components/ContactsComponent'
 
 
-const Search = () =>{
+const Contacts = () =>{
     return(
         <View style={styles.container}>
-            <EditProfile />
+            <ContactsComponent/>
         </View>
     )
 }
@@ -18,4 +16,4 @@ const styles = StyleSheet.create({
     },
 })
 
-export default Search
+export default Contacts
