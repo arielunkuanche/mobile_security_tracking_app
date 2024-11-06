@@ -4,6 +4,9 @@ import { StyleSheet, SafeAreaView, ActivityIndicator, Alert, View, Share, Linkin
 import { Button } from 'react-native-paper';
 import MapView, { Marker } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { Firebase_DB,Firebase_auth  } from '../config/FirebaseConfig';
+import { collection, getDocs } from 'firebase/firestore';
+import * as SMS from 'expo-sms';
 
 const Index = () => {
     const [loadingCurLocation, setLoadingCurLocation] = useState(true);
@@ -32,15 +35,38 @@ const Index = () => {
     const callEmergency = () => {
         Linking.openURL('tel:911'); 
         };
+    // const onShare = async() => {
+    //     if (!currentLocation) return;
+    //     const message = `I don't feel safe. Here is my location: https://maps.google.com/?q=${currentLocation.latitude},${currentLocation.longitude} `
+    //     try {
+    //         await Share.share({ message });
+    //     } catch (error) {
+    //         console.error('Error sharing location:', error);
+    //     }
+    // };
     const onShare = async() => {
         if (!currentLocation) return;
         const message = `I don't feel safe. Here is my location: https://maps.google.com/?q=${currentLocation.latitude},${currentLocation.longitude} `
         try {
-            await Share.share({ message });
+            const user = Firebase_auth.currentUser;
+            const contactsRef = collection(Firebase_DB, 'users', user.uid, 'contacts');
+            const contactsSnapshot = await getDocs(contactsRef);
+            const contactsList = contactsSnapshot.docs
+                                .map(doc => doc.data().phone)
+                                .filter(phone => phone && phone.length > 0);
+            console.log('contactsList', contactsList);
+            if (contactsList.length > 0){
+                await SMS.sendSMSAsync(
+                    contactsList,
+                    message,    
+                );
+            }else{
+                alert('No emergency contacts found');
+            }
         } catch (error) {
-            console.error('Error sharing location:', error);
+            console.error('Error sharing location via SMS:', error);
         }
-    }
+    };
     return(
         <SafeAreaView style={styles.container}>
         {loadingCurLocation && <ActivityIndicator size='large' color='#0000ff' /> }

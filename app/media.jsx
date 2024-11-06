@@ -4,8 +4,10 @@ import { Video } from 'expo-av';
 import { useState, useRef, useEffect } from 'react';
 import * as MediaLibrary from 'expo-media-library';
 import { shareAsync } from 'expo-sharing';
+import * as SMS from 'expo-sms';
 import MediaActions from '../components/MediaActions';
 import CameraControls from '../components/CameraControls';
+import { collection, getDocs, } from 'firebase/firestore';
 
 const CameraScreen = () => {
     const [hasCameraPermission, setHasCameraPermission] = useState(null);
@@ -91,9 +93,10 @@ const CameraScreen = () => {
             }
         }
     };
-    const share = async (uri) => {
-        if(uri) await shareAsync(uri);
-    };
+    // const share = async (uri) => {
+    //     if(uri) await shareAsync(uri);
+    // };
+
     const renderImageView = ()=>{
         return (
             <SafeAreaView style={styles.container}>
@@ -133,6 +136,7 @@ const CameraScreen = () => {
                 style={styles.camera}
                 facing={facing}
                 ref={cameraRef}
+                mode='video'
                 >
                     {isRecording && renderRecordingIndicator()}
                     <CameraControls 
