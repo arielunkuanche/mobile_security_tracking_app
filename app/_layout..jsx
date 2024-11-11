@@ -26,7 +26,7 @@ const _layout = () => {
     useEffect(() => {   
         const auth = Firebase_auth;
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            console.log('Current user is: ', currentUser)
+            // console.log('Current user is: ', currentUser)
             setUser(currentUser);
             setLoading(false);
         });
