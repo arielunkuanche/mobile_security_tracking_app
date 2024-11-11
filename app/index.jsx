@@ -9,6 +9,13 @@ import { collection, getDocs } from 'firebase/firestore';
 import * as SMS from 'expo-sms';
 import { useFetchOffense } from '../custom hooks/useFetchOffense';
 
+const DEFAULT_UK_LOCATION ={
+    latitude: 51.509865, // Central London
+    longitude: -0.118092,
+    latitudeDelta: 0.15,  // Adjust to show a larger area
+    longitudeDelta: 0.15,
+};
+
 const Index = () => {
     const [loadingCurLocation, setLoadingCurLocation] = useState(true);
     const [currentLocation, setCurrentLocation] = useState(null);
@@ -33,19 +40,37 @@ const Index = () => {
             if(status !== 'granted'){
                 Alert.alert('Permission Denied', 'Permission to access location was denied.');
                 setLoadingCurLocation(false);
+                setSearchInputAddress({ address: 'London', city: 'London' }); // Default UK search
                 return;
             }
-            let currentLocation = await Location.getCurrentPositionAsync({});
-            console.log('here is user current location', currentLocation);
-            const locationCoords = ({
-                latitude: currentLocation.coords.latitude,
-                longitude: currentLocation.coords.longitude,
-                latitudeDelta: 0.02,
-                longitudeDelta: 0.02,
-            });
-            setCurrentLocation(locationCoords);
-            setDisplayedLocation(locationCoords);
-            setLoadingCurLocation(false);
+            try {
+                const currentLocation = await Location.getCurrentPositionAsync({});
+                console.log('here is user current location', currentLocation);
+    
+                // Check if the user is in the UK
+                const isInUK = currentLocation.coords.latitude >= 49.9 && currentLocation.coords.latitude <= 60.9 &&
+                               currentLocation.coords.longitude >= -8.6 && currentLocation.coords.longitude <= 1.8;
+    
+                const locationCoords = isInUK ? {
+                    latitude: currentLocation.coords.latitude,
+                    longitude: currentLocation.coords.longitude,
+                    latitudeDelta: 0.15,
+                    longitudeDelta: 0.15,
+                } : DEFAULT_UK_LOCATION;
+    
+                setCurrentLocation(locationCoords);
+                setDisplayedLocation(locationCoords);
+
+                // Trigger userFetchOffense hook with default UK location or current location city
+                setSearchInputAddress(isInUK ? { address: 'Current Location', city: 'Nearby' } : { address: 'London', city: 'London' });
+            } catch (error) {
+                console.error('Error fetching current location:', error);
+                setCurrentLocation(DEFAULT_UK_LOCATION);
+                setDisplayedLocation(DEFAULT_UK_LOCATION);
+                setSearchInputAddress({ address: 'London', city: 'London' }); // default UK search
+            } finally {
+                setLoadingCurLocation(false);
+            }
         })();
     }, []);
 
@@ -54,8 +79,8 @@ const Index = () => {
             setDisplayedLocation(inputLocation);
             mapViewRef.current?.animateToRegion({
                 ...inputLocation,
-                latitudeDelta: 0.02,
-                longitudeDelta: 0.02,
+                latitudeDelta: 0.15,
+                longitudeDelta: 0.15,
             }, 2000); // Animation duration in ms
         }
     }, [inputLocation]);
@@ -78,10 +103,27 @@ const Index = () => {
             city: '',
         })
     };
+    const handleNavigateToCurrentLocation = async ()=>{
+        try {
+            let currentLocation = await Location.getCurrentPositionAsync({});
+            const locationCoords = {
+                latitude: currentLocation.coords.latitude,
+                longitude: currentLocation.coords.longitude,
+                latitudeDelta: 0.15,
+                longitudeDelta: 0.15,
+            };
+            setCurrentLocation(locationCoords);
+            setDisplayedLocation(locationCoords);
+            mapViewRef.current?.animateToRegion(locationCoords, 2000);
+            console.log('Navigated to current location:', locationCoords);
+        } catch (error) {
+            Alert.alert('Error', 'Failed to navigate to current location');
+            console.log('Error navigating to current location:', error);
+        }
+    };
     const callEmergency = () => {
         Linking.openURL('tel:911'); 
     };
-
     const onShare = async() => {
         if (!currentLocation) return;
         const message = `I don't feel safe. Here is my location: https://maps.google.com/?q=${currentLocation.latitude},${currentLocation.longitude} `
@@ -109,7 +151,7 @@ const Index = () => {
     return(
         <PaperProvider>
             <SafeAreaView style={styles.container}>
-            {loadingCurLocation && <ActivityIndicator size='large' color='tomato' /> }
+            {loadingCurLocation && <ActivityIndicator size='large' color='#20b2aa' /> }
             {!loadingCurLocation && (
                 <View style={styles.wrapper}>
                     <MapView
@@ -127,7 +169,7 @@ const Index = () => {
                         )}
                         {inputLocation && (
                             <Marker
-                                pinColor='#8fbc8f'
+                                pinColor='#b8860b'
                                 coordinate={inputLocation}
                                 title={markerTitle} 
                             />
@@ -149,6 +191,12 @@ const Index = () => {
                         style={styles.fab}
                         icon='menu'
                         onPress={toggleMenu}
+                    />
+                    <Button 
+                        icon='navigation-variant-outline' 
+                        mode='text'
+                        style={styles.navigateButton}
+                        onPress={handleNavigateToCurrentLocation}
                     />
                     <Portal>
                         <Modal visible={menuVisible} onDismiss={toggleMenu} contentContainerStyle={styles.modalContainer}>
@@ -215,7 +263,7 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        top: 20,
+        top: 5,
         right: 16,
         backgroundColor: '#20b2aa',
     },
@@ -230,6 +278,14 @@ const styles = StyleSheet.create({
     menuButton: {
         marginVertical: 10,
         width: '100%',
+    },
+    navigateButton:{
+        position: 'absolute',
+        bottom: 80,
+        right: 16,
+        height: 100,
+        padding: 10,
+        borderRadius: 5,
     },
 });
 

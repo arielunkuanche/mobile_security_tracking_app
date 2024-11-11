@@ -1,3 +1,5 @@
+import { Alert } from "react-native";
+
 export const fetchLastUpdatedDate = async () => {
     try {
         const dateUrl = process.env.EXPO_PUBLIC_LAST_UPDATED_DATE_API;
@@ -29,7 +31,8 @@ export const fetchAllOffenseTypes = async (lastUpdatedDate) => {
         if(offenseTypesData.length > 0){
             return offenseTypesData.name;
         }else {
-            throw new Error('No offense types found');
+            // throw new Error('No offense types found');
+            alert('No offense found in this month and address!');
         }
     } catch (error) {
         console.error('Error fetching offense types:', error);
@@ -82,6 +85,7 @@ export const fetchOffenseOnLocation = async (lastUpdatedDate, addressCoord) => {
             return markers;
         }else {
             console.log('No offense found on location');
+            alert('No offense found on this location in this month!');
             return [];
         }
     } catch (error) {
