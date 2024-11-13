@@ -11,13 +11,18 @@ const Profile = () =>{
     const [image, setImage] = useState(null);
     const [username, setUsername] = useState('Username');
     const [editProfileVisible, setEditProfileVisible] = useState(false);
+    const [notificationVisible, setNotificationVisible] = useState(false);
     const [contactVisible, setContactVisible] = useState(false);
     const [settingVisible, setSettingVisible] = useState(false);
+    const [notificationEnable, setNotificationEnable] = useState(false);
     const [vibrateEnabled, setVibrateEnabled] = useState(false);
     const [timeRange, setTimeRange] = useState({start: '22:00', end: '06:00'});
     
     const showEditProfileModal = () => setEditProfileVisible(true);
     const hideEditProfileModal = () => setEditProfileVisible(false);
+
+    const showNotificationModal = () => setNotificationVisible(true);
+    const hideNotificationModal = () => setNotificationVisible(false);
 
     const showContactsModal = () => setContactVisible(true);
     const hideContactsModal = () => setContactVisible(false);
@@ -84,12 +89,12 @@ const Profile = () =>{
                         <TouchableOpacity style={styles.editActionButton} onPress={showEditProfileModal}>
                             <Text style={styles.editButtonText} >Edit Profile</Text>  
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.editActionButton}>
+                        <TouchableOpacity style={styles.editActionButton} onPress={showNotificationModal}>
                             <Text style={styles.editButtonText} >Notification</Text>  
                         </TouchableOpacity>
                     </View>
                     <Button style={styles.modalButton} icon='contacts' mode='contained' onPress={showContactsModal}>
-                        Your Emergency Contacts
+                        Your privacy
                     </Button>
                     <Button style={styles.modalButton} icon='application-cog' mode='contained' onPress={showSettingModal}>
                         Settings
@@ -97,6 +102,15 @@ const Profile = () =>{
                     <Portal>
                         <Modal visible={editProfileVisible} onDismiss={hideEditProfileModal} contentContainerStyle={styles.modalBackground}>
                             <EditProfile onClose={hideEditProfileModal} onChangeUsername={handleUsernameChange} />
+                        </Modal>
+                    </Portal>
+                    <Portal>
+                        <Modal visible={notificationVisible} onDismiss={hideNotificationModal} contentContainerStyle={styles.modalContainer}>
+                            <Text style={styles.modalTitle}>Notification</Text>
+                                <View style={styles.settingItem}>
+                                    <Text>Enable notification</Text>
+                                    <Switch value={notificationEnable} onValueChange={setNotificationEnable} color='red'/>
+                                </View>
                         </Modal>
                     </Portal>
                     <Portal>
@@ -120,12 +134,14 @@ const Profile = () =>{
                                     label='Start'
                                     value={timeRange.start}
                                     onChangeText={text => setTimeRange({...timeRange, start: text})}
+                                    disabled={!vibrateEnabled}
                                 />
                                 <TextInput
                                     mode='outlined'
                                     label='End'
                                     value={timeRange.end}
                                     onChangeText={text => setTimeRange({...timeRange, end: text})}
+                                    disabled={!vibrateEnabled}
                                 />
                             </View>
                         </Modal>

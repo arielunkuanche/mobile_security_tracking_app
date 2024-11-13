@@ -60,10 +60,11 @@ const LoginScreen = () => {
                         />
                         <View style={styles.describtionWrapper}>
                             <Text style={styles.title}>
-                                Crime Monitoring
+                                Safe City
                             </Text>
                             <Text style={styles.descText}>
-                                This is an amazing app helps you locate high crime locations and share with your trusted families with any possible alert!
+                                SafeCity is your tool for staying informed about crime and safety in your areas across England, Wales, and Northern Ireland. 
+                                Search for recent offenses by address or type, and view crime data for your area.
                             </Text>
                             <View style={styles.inputWrapper}>
                                 <TextInput 

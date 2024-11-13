@@ -23,9 +23,9 @@ const VibrationComponent = () => {
         <SafeAreaView>
             <Text>Vibration Component</Text>
             <Button
-            title="Stop vibration pattern"
-            onPress={() => Vibration.cancel()}
-            color="#FF0000"
+                title="Stop vibration pattern"
+                onPress={() => Vibration.cancel()}
+                color="#FF0000"
             />
         </SafeAreaView>
     );

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Alert, Keyboard} from "react-native";
+import { Keyboard} from "react-native";
 import { fetchLastUpdatedDate, fetchInputAddressCoordinates, fetchOffenseOnLocation } from '../api';
 
-export const useFetchOffense = ({ address, city }) => {
+export const useFetchOffenseOnLocation = ({ address, city }) => {
     const [inputLocation, setInputLocation] = useState({
         latitude: 0,
         longitude: 0,
@@ -19,8 +19,10 @@ export const useFetchOffense = ({ address, city }) => {
                 try {
                     setLoading(true);
                     const addressCoordinate = await fetchInputAddressCoordinates({ address, city });
-                    if (!addressCoordinate) throw new Error('No UK address found.');
-
+                    console.log('Address coordinate in onLocation hook:', addressCoordinate);
+                    // if (!addressCoordinate) {
+                    //     alert('No address found matching the UK city.');
+                    // }
                     const locationWithCoord = {
                         latitude: parseFloat(addressCoordinate.lat),
                         longitude: parseFloat(addressCoordinate.lon),
@@ -28,7 +30,6 @@ export const useFetchOffense = ({ address, city }) => {
                         longitudeDelta: 0.02,
                     };
                     setInputLocation(locationWithCoord);
-
                     const date = await fetchLastUpdatedDate();
                     if (!date) throw new Error('Failed to fetch last updated date.');
 
@@ -36,8 +37,7 @@ export const useFetchOffense = ({ address, city }) => {
                     setMarkers(offenseData);
                     setMarkerTitle(addressCoordinate.display_name  || 'Your input address');
                 } catch (error) {
-                    console.log('Error in custom hook: ', error);
-                    Alert.alert('Error fetching data: ', error.message)
+                    console.log('Error in custom hook onLocation: ', error);
                 } finally {
                     setLoading(false);
                     Keyboard.dismiss();
