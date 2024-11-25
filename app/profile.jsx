@@ -1,10 +1,14 @@
-import  { View, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, ScrollView, Switch, } from 'react-native';
+import  { View, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, ScrollView, Switch, Alert} from 'react-native';
 import React, { useEffect, useState} from 'react';
 import { IconButton, } from 'react-native-paper';
 import { Firebase_auth } from '../config/FirebaseConfig';
 import * as ImagePicker from 'expo-image-picker';
 import { Modal, Portal, Button, PaperProvider, TextInput } from 'react-native-paper';
 import EditProfile from '../components/EditProfile';
+import * as Notifications from 'expo-notifications';
+import VibrationComponent from '../components/VibrationComponent';
+import { handleTimeRangeCheck } from '../utils/timeValidation';
+import { Vibration } from 'react-native';
 
 
 const Profile = () =>{
@@ -53,6 +57,26 @@ const Profile = () =>{
     const handleUsernameChange = (newUsername) => {
         setUsername(newUsername);
     };
+    const handleStopVibration = () => {
+        setVibrateEnabled(false); // Disable vibration
+        console.log('Vibration stopped manually.');
+    };
+    const handleStartBlur = () => {
+        try {
+            const validStart = handleTimeRangeCheck(timeRange.start);
+            setTimeRange({ ...timeRange, start: validStart });
+        } catch (error) {
+            Alert.alert('Invalid input of the time: ', error.message);
+        }
+    };
+    const handleEndBlur = () => {
+        try {
+            const validEnd = handleTimeRangeCheck(timeRange.end);
+            setTimeRange({ ...timeRange, end: validEnd });
+        } catch (error) {
+            Alert.alert('Invalid input of the time: ', error.message);
+        }
+    };
     return(
         <PaperProvider>
             <SafeAreaView style={styles.container}>
@@ -93,12 +117,16 @@ const Profile = () =>{
                             <Text style={styles.editButtonText} >Notification</Text>  
                         </TouchableOpacity>
                     </View>
-                    <Button style={styles.modalButton} icon='contacts' mode='contained' onPress={showContactsModal}>
+                    <Button style={styles.modalButton}  labelStyle={styles.buttonText} icon='contacts' mode='contained' onPress={showContactsModal}>
                         Your privacy
                     </Button>
-                    <Button style={styles.modalButton} icon='application-cog' mode='contained' onPress={showSettingModal}>
-                        Settings
+                    <Button style={styles.modalButton}  labelStyle={styles.buttonText} icon='application-cog' mode='contained' onPress={showSettingModal}>
+                        Vibration settings
                     </Button>
+                    <VibrationComponent
+                        timeRange={timeRange}
+                        vibrateEnabled={vibrateEnabled}
+                    />
                     <Portal>
                         <Modal visible={editProfileVisible} onDismiss={hideEditProfileModal} contentContainerStyle={styles.modalBackground}>
                             <EditProfile onClose={hideEditProfileModal} onChangeUsername={handleUsernameChange} />
@@ -107,8 +135,9 @@ const Profile = () =>{
                     <Portal>
                         <Modal visible={notificationVisible} onDismiss={hideNotificationModal} contentContainerStyle={styles.modalContainer}>
                             <Text style={styles.modalTitle}>Notification</Text>
+                                <Text>Enable push notification if you want to receive our updates.</Text>
                                 <View style={styles.settingItem}>
-                                    <Text>Enable notification</Text>
+                                    <Text>Enable</Text>
                                     <Switch value={notificationEnable} onValueChange={setNotificationEnable} color='red'/>
                                 </View>
                         </Modal>
@@ -122,28 +151,33 @@ const Profile = () =>{
                     </Portal>
                     <Portal>
                         <Modal visible={settingVisible} onDismiss={hideSettingModal} contentContainerStyle={styles.modalContainer}>
-                            <Text style={styles.modalTitle}>Settings</Text>
+                            <Text style={styles.modalTitle}>Vibration settings</Text>
                             <View style={styles.settingItem}>
                                 <Text>Enable Vibration</Text>
                                 <Switch value={vibrateEnabled} onValueChange={setVibrateEnabled} color='red'/>
                             </View>
                             <View style={styles.settingItem}>
-                                <Text>Time Range</Text>
+                                <Text>Time Range(HH:MM)</Text>
                                 <TextInput
+                                    style={styles.textInput}
                                     mode='outlined'
                                     label='Start'
                                     value={timeRange.start}
-                                    onChangeText={text => setTimeRange({...timeRange, start: text})}
+                                    onChangeText={(text) => setTimeRange({ ...timeRange, start: text })}
+                                    onBlur={handleStartBlur} //Validate an input field when the user leaves it: onBlur
                                     disabled={!vibrateEnabled}
                                 />
                                 <TextInput
+                                    style={styles.textInput}
                                     mode='outlined'
                                     label='End'
                                     value={timeRange.end}
-                                    onChangeText={text => setTimeRange({...timeRange, end: text})}
+                                    onChangeText={(text) => setTimeRange({ ...timeRange, end: text })}
+                                    onBlur={handleEndBlur}
                                     disabled={!vibrateEnabled}
                                 />
                             </View>
+                            <Button mode="contained" style={styles.modalButton}  labelStyle={styles.buttonText} onPress={handleStopVibration}>Stop Vibration</Button>
                         </Modal>
                     </Portal>
                 </ScrollView>
@@ -252,6 +286,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#778899',
         color: 'white',
     },
+    buttonText: {
+        color: 'white', // Ensure the button text color is white
+    },
     modalBackground: {
         flex: 1,
         width: '100%',
@@ -282,6 +319,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         marginVertical: 10,
+    },
+    textInput: {
+        backgroundColor: '#ccc',
+        marginVertical: 5,
+        borderColor: '#ccc',
+        color: 'black',
+        borderRadius: 5,
+        paddingHorizontal: 10,
+        fontSize: 16,
     },
 });
 export default Profile
