@@ -1,50 +1,101 @@
-# Welcome to your Expo app 👋
+# React Native Safety Alert App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This project is a React Native application designed to enhance personal safety by providing real-time proximity alerts based on reported offenses from the UK Police API. The app incorporates features like vibration alerts, notifications, and custom user settings for a safer experience.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Map Visualization**: Displays reported offenses as markers on a map.
+- **Proximity Alerts**: Triggers vibration and notifications when within a user-defined proximity of offenses.
+- **Custom Settings**:
+  - Configurable vibration settings with a time range and proximity.
+  - Manage notification and location permissions.
+- **User Account Management**: User authentication via Firebase.
+- **Privacy Modal**: Clear information on data usage and app permissions.
 
+## Technologies Used
+
+### Frontend
+- **React Native**: Framework for building mobile applications.
+- **Expo**: Simplifies the development process with features like location and notification handling.
+- **React Native Paper**: UI components library for styling.
+
+### Backend & APIs
+- **Firebase Authentication**: Handles user sign-in and sign-out.
+- **Firebase Firestore**: Stores user settings.
+- **UK Police API**: Fetches offense data for real-time alerts.
+
+### Libraries and Utilities
+- **Geolib**: Calculates distances between locations to trigger proximity alerts.
+- **Expo Notifications**: Manages push notifications.
+- **Expo Location**: Handles location permissions and current user location.
+- **AsyncStorage**: Persists user settings locally.
+
+## Setup and Installation
+
+1. Clone the repository:
+   ```bash
+   git clone <your-repo-link>
+   ```
+2. Navigate to the project directory:
+   ```bash
+   cd react-native-safety-alert-app
+   ```
+3. Install dependencies:
    ```bash
    npm install
    ```
-
-2. Start the app
-
+4. Start the Expo development server:
    ```bash
-    npx expo start
+   npm start
    ```
+5. Scan the QR code with Expo Go (on iOS or Android) to run the app on your device.
 
-In the output, you'll find options to open the app in a
+## Usage
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+1. Launch the app and log in with Firebase Authentication.
+2. Access the settings to enable vibration and configure the proximity range and time range.
+3. View reported offenses on the map.
+4. Receive alerts when within proximity of offenses during the configured time range.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## File Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+.
+├── components
+│   ├── EditProfile.jsx
+│   ├── VibrationComponent.jsx
+├── custom-hooks
+│   ├── useFetchOffenseOnType.js
+├── config
+│   ├── FirebaseConfig.js
+├── utils
+│   ├── locationUtils.js
+│   ├── timeRangeUtils.js
+├── screens
+│   ├── Profile.jsx
+│   ├── MapView.jsx
+├── assets
+│   ├── images
+│       ├── books.jpg
+│       ├── photographer.jpg
+├── App.js
+├── README.md
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Known Issues
 
-## Learn more
+1. **Expo Go Limitation**: Notifications may not display correctly in Expo Go. Test on a standalone build.
+2. **Mock Data Testing**: The app uses mock location data for testing since offense data is UK-based.
 
-To learn more about developing your project with Expo, look at the following resources:
+## Future Enhancements
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- Add altitude handling for precise location-based alerts.
+- Support for additional datasets beyond the UK Police API.
+- Enhanced privacy features with granular permission controls.
 
-## Join the community
+## License
 
-Join our community of developers creating universal apps.
+This project is licensed under the MIT License. See the LICENSE file for details.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+---
+
