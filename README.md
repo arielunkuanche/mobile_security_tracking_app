@@ -34,11 +34,11 @@ This project is a React Native application designed to enhance personal safety b
 
 1. Clone the repository:
    ```bash
-   git clone <your-repo-link>
+   git clone https://github.com/arielunkuanche/mobile_security_tracking_app.git
    ```
 2. Navigate to the project directory:
    ```bash
-   cd react-native-safety-alert-app
+   cd mobile_security_tracking_app
    ```
 3. Install dependencies:
    ```bash
@@ -62,23 +62,37 @@ This project is a React Native application designed to enhance personal safety b
 ```
 .
 ├── components
+│   ├── CameraControls.jsx
+│   ├── ContactsComponent.jsx
+│   ├── EditContact.jsx
 │   ├── EditProfile.jsx
+│   ├── LoginScreen.jsx
+│   ├── MediaActions.jsx
+│   ├── OffensePickerComponent.jsx
+│   ├── SearchScreen
+│   ├── TabBar.jsx
 │   ├── VibrationComponent.jsx
 ├── custom-hooks
-│   ├── useFetchOffenseOnType.js
+│   ├── useFetchOffenseOnLocation.jsx
+│   ├── useFetchOffenseOnType.jsx
 ├── config
-│   ├── FirebaseConfig.js
+│   ├── FirebaseConfig.jsx
 ├── utils
-│   ├── locationUtils.js
-│   ├── timeRangeUtils.js
-├── screens
-│   ├── Profile.jsx
-│   ├── MapView.jsx
+│   ├── timeValidation.jsx
+├── app
+│   ├── _layout.jsx
+│   ├── contacts.jsx
+│   ├── index.jsx
+│   ├── media.jsx
+│   ├── profile.jsx
 ├── assets
+│   ├── fonts
+│   │   ├── Outfit-Bold.ttf
+│   │   ├── Outfit-Medium.ttf
+│   │   ├── Outfit-Regular.ttf
 │   ├── images
 │       ├── books.jpg
 │       ├── photographer.jpg
-├── App.js
 ├── README.md
 ```
 
