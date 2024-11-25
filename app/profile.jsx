@@ -1,14 +1,15 @@
-import  { View, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, ScrollView, Switch, Alert} from 'react-native';
+import  { View, Image, SafeAreaView, StyleSheet, Text, TouchableOpacity, ScrollView, Switch, Alert, Keyboard} from 'react-native';
 import React, { useEffect, useState} from 'react';
+import * as Location from 'expo-location';
 import { IconButton, } from 'react-native-paper';
 import { Firebase_auth } from '../config/FirebaseConfig';
 import * as ImagePicker from 'expo-image-picker';
 import { Modal, Portal, Button, PaperProvider, TextInput } from 'react-native-paper';
 import EditProfile from '../components/EditProfile';
-import * as Notifications from 'expo-notifications';
 import VibrationComponent from '../components/VibrationComponent';
 import { handleTimeRangeCheck } from '../utils/timeValidation';
-import { Vibration } from 'react-native';
+import { fetchOffenseOnLocation } from '../api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 const Profile = () =>{
@@ -21,7 +22,10 @@ const Profile = () =>{
     const [notificationEnable, setNotificationEnable] = useState(false);
     const [vibrateEnabled, setVibrateEnabled] = useState(false);
     const [timeRange, setTimeRange] = useState({start: '22:00', end: '06:00'});
-    
+    const [proximity, setProximity] = useState(500);
+    const [currentLocation, setCurrentLocation] = useState(null);
+    const [offenseMarkers, setOffenseMarkers] = useState([]);    
+
     const showEditProfileModal = () => setEditProfileVisible(true);
     const hideEditProfileModal = () => setEditProfileVisible(false);
 
@@ -41,6 +45,44 @@ const Profile = () =>{
             setUsername(currentUser.email.slice(0, 5));
         }
     }, []); 
+    useEffect(() => {
+        // set up a default location in UK and fetch offense data to test the vibration feature
+        const fetchInitialOffenseData = async () => {
+            try {
+                const mockLocation = {
+                    lat: 51.5074456, 
+                    lon: -0.1277653, 
+                };
+                setCurrentLocation(mockLocation);
+                const mockedDate = '2024-09';
+                const markers = await fetchOffenseOnLocation(mockedDate, mockLocation);
+                console.log('Markers in Profile init:', markers);
+                setOffenseMarkers(markers);
+            } catch (error) {
+                console.error('Error fetching initial offense data in Profile:', error);
+            }
+            
+        };
+    
+        fetchInitialOffenseData();
+    }, []);
+    useEffect(() => {
+        const loadSettings = async () => {
+            try {
+                const savedTimeRange = await AsyncStorage.getItem('timeRange');
+                const savedProximity = await AsyncStorage.getItem('proximity');
+                const savedVibrateEnabled = await AsyncStorage.getItem('vibrateEnabled');
+    
+                if (savedTimeRange) setTimeRange(JSON.parse(savedTimeRange));
+                if (savedProximity) setProximity(parseInt(savedProximity, 10));
+                if (savedVibrateEnabled) setVibrateEnabled(JSON.parse(savedVibrateEnabled));
+            } catch (error) {
+                console.error('Failed to load vibration setting values in Profile:', error);
+            }
+        };
+    
+        loadSettings();
+    }, []);
     const handleImageSelection = async () => {
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -58,7 +100,7 @@ const Profile = () =>{
         setUsername(newUsername);
     };
     const handleStopVibration = () => {
-        setVibrateEnabled(false); // Disable vibration
+        setVibrateEnabled(false); 
         console.log('Vibration stopped manually.');
     };
     const handleStartBlur = () => {
@@ -76,6 +118,34 @@ const Profile = () =>{
         } catch (error) {
             Alert.alert('Invalid input of the time: ', error.message);
         }
+    };
+    const saveAsyncSettings = async (key, value) => {
+        try {
+            await AsyncStorage.setItem(key, JSON.stringify(value));
+            console.log(`Saved async ${key}:`, value);
+        } catch (error) {
+            console.error(`Failed to save ${key}:`, error);
+        }
+    };
+    // async saving logics
+    const handleTimeRangeChange = (newTimeRange) => {
+        setTimeRange(newTimeRange);
+        saveAsyncSettings('timeRange', newTimeRange);
+    };
+    const handleProximityChange = (value) => {
+        if (value === '') {
+            setProximity(value); 
+            return;
+        }
+        const numericValue = parseInt(value, 10);
+        if (!isNaN(numericValue)) {
+            setProximity(numericValue);
+            saveAsyncSettings('proximity', numericValue);
+        };
+    };
+    const handleVibrateEnabledChange = (value) => {
+        setVibrateEnabled(value);
+        saveAsyncSettings('vibrateEnabled', value);
     };
     return(
         <PaperProvider>
@@ -117,7 +187,7 @@ const Profile = () =>{
                             <Text style={styles.editButtonText} >Notification</Text>  
                         </TouchableOpacity>
                     </View>
-                    <Button style={styles.modalButton}  labelStyle={styles.buttonText} icon='contacts' mode='contained' onPress={showContactsModal}>
+                    <Button style={styles.modalButton}  labelStyle={styles.buttonText} icon="shield-check-outline" mode='contained' onPress={showContactsModal}>
                         Your privacy
                     </Button>
                     <Button style={styles.modalButton}  labelStyle={styles.buttonText} icon='application-cog' mode='contained' onPress={showSettingModal}>
@@ -126,6 +196,9 @@ const Profile = () =>{
                     <VibrationComponent
                         timeRange={timeRange}
                         vibrateEnabled={vibrateEnabled}
+                        markers={offenseMarkers}
+                        proximity={proximity}
+                        currentLocation={currentLocation}
                     />
                     <Portal>
                         <Modal visible={editProfileVisible} onDismiss={hideEditProfileModal} contentContainerStyle={styles.modalBackground}>
@@ -144,9 +217,55 @@ const Profile = () =>{
                     </Portal>
                     <Portal>
                         <Modal visible={contactVisible} onDismiss={hideContactsModal} contentContainerStyle={styles.modalContainer}>
-                            <Text style={styles.modalTitle}>Your emergency contacts</Text>
-                            <Text>Name: John Doe</Text>
-                            <Text>Phone: +123456789</Text>
+                            <Text style={styles.modalTitle}>Privacy Settings</Text>
+                            <View style={styles.privacySettingItem}>
+                                <Text style={styles.privacyTextHeader} >How We Use Your Data:</Text>
+                                {
+                                `- We use your location data to provide real time alerts near reported offenses.
+                                - Notification settings are configurable under Vibration Settings.
+                                - Your data is not shared with third parties.`.split('-').map((item, index) =>
+                                    item.trim() ? (
+                                        <Text key={index} style={styles.privacyText}>
+                                            • {item.trim()}
+                                        </Text>
+                                    ) : null
+                                )}
+                            </View>
+                            <View style={styles.privacySettingItem}>
+                                <Text style={styles.privacyTextHeader}>Manage App Permissions:</Text>
+                                <Button
+                                    icon="lock-outline"
+                                    mode="contained"
+                                    style={styles.modalButton}
+                                    labelStyle={styles.buttonText}
+                                    onPress={() => {
+                                        Alert.alert(
+                                            'Manage Permissions',
+                                            'Please visit your device settings to manage location and notification permissions.'
+                                        );
+                                    }}
+                                >
+                                    Open Device Settings
+                                </Button>
+                            </View>
+                            <View style={styles.privacySettingItem}>
+                                <Text style={styles.privacyTextHeader}>Account Management:</Text>
+                                <Button
+                                    icon="account-cancel-outline"
+                                    mode="contained"
+                                    style={styles.modalButton}
+                                    labelStyle={styles.buttonText}
+                                    onPress={() => {
+                                        Alert.alert(
+                                            'Delete Account',
+                                            'Account deletion is permanent and cannot be undone. Contact support if needed.',
+                                            [{ text: 'Cancel' }, { text: 'Delete', style: 'destructive' }]
+                                        );
+                                    }}
+                                >
+                                    Delete Account
+                                </Button>
+                            </View>
                         </Modal>
                     </Portal>
                     <Portal>
@@ -154,7 +273,7 @@ const Profile = () =>{
                             <Text style={styles.modalTitle}>Vibration settings</Text>
                             <View style={styles.settingItem}>
                                 <Text>Enable Vibration</Text>
-                                <Switch value={vibrateEnabled} onValueChange={setVibrateEnabled} color='red'/>
+                                <Switch value={vibrateEnabled} onValueChange={handleVibrateEnabledChange} color='red'/>
                             </View>
                             <View style={styles.settingItem}>
                                 <Text>Time Range(HH:MM)</Text>
@@ -163,7 +282,7 @@ const Profile = () =>{
                                     mode='outlined'
                                     label='Start'
                                     value={timeRange.start}
-                                    onChangeText={(text) => setTimeRange({ ...timeRange, start: text })}
+                                    onChangeText={(text) => handleTimeRangeChange({ ...timeRange, start: text })}
                                     onBlur={handleStartBlur} //Validate an input field when the user leaves it: onBlur
                                     disabled={!vibrateEnabled}
                                 />
@@ -172,8 +291,18 @@ const Profile = () =>{
                                     mode='outlined'
                                     label='End'
                                     value={timeRange.end}
-                                    onChangeText={(text) => setTimeRange({ ...timeRange, end: text })}
+                                    onChangeText={(text) => handleTimeRangeChange({ ...timeRange, end: text })}
                                     onBlur={handleEndBlur}
+                                    disabled={!vibrateEnabled}
+                                />
+                            </View>
+                            <View style={styles.settingItem}>
+                                <Text>Proximity (meters)</Text>
+                                <TextInput
+                                    style={styles.textInput}
+                                    value={proximity.toString()}
+                                    onChangeText={handleProximityChange}
+                                    keyboardType="numeric"
                                     disabled={!vibrateEnabled}
                                 />
                             </View>
@@ -328,6 +457,23 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingHorizontal: 10,
         fontSize: 16,
+    },
+    privacySettingItem: {
+        flexDirection: 'column',
+        alignItems: 'flex-start', // Align text to the left
+        marginVertical: 5,
+    },
+    privacyTextHeader: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: 'black',
+        marginBottom: 10,
+    },
+    privacyText: {
+        fontSize: 14,
+        color: 'grey',
+        marginBottom: 5,
+        lineHeight: 20,
     },
 });
 export default Profile
