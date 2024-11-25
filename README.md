@@ -46,7 +46,7 @@ This project is a React Native application designed to enhance personal safety b
    ```
 4. Start the Expo development server:
    ```bash
-   npm start
+   npx expo start
    ```
 5. Scan the QR code with Expo Go (on iOS or Android) to run the app on your device.
 
